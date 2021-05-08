@@ -1,38 +1,47 @@
 #include <stdio.h>
 #include <Windows.h>
 #include <TlHelp32.h>
+#include <tchar.h>
 #include <conio.h>
-#define BUFSIZE 100
 
 BOOL StartMenu(void);
-DWORD* FindAndWriteMemory(HANDLE hProc, unsigned int find, unsigned int size);
+void PrintProcessList(void);
+BOOL GetModulePath(DWORD pid, char* ModulePath, unsigned int size);
 void Error(const char* message);
 void gotoXY(int x, int y);
 
 int main(void)
 {
-	BOOL decision = StartMenu();
-	if (decision == FALSE)
-		return 0;
-	system("cls");
-	gotoXY(0, 0);
-
-	PROCESSENTRY32 pe;
-
 	DWORD pid;
-	puts("Enter process id : ");
-	scanf_s("%d", &pid);
-	HANDLE h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-	if (h != NULL)
-		puts("\n\nOpened process successfully\n\n");
-	DWORD bufsize = 0;
-	puts("Find Memory size : ");
-	scanf_s("%ld", bufsize, sizeof(unsigned long));
-	BYTE* buffer = (BYTE*)malloc(bufsize * sizeof(BYTE));
-	puts("Find Memory buf : ");
-	scanf_s("%s", buffer, (unsigned int)(bufsize * sizeof(BYTE)));
+	while (1)
+	{
+		system("cls");
+		BOOL decision = StartMenu();
+		if (decision == FALSE)
+			return 0;
+		system("cls");
+		gotoXY(0, 0);
 
-	free(buffer);
+		PrintProcessList();
+
+		printf("\n\nEnter \'0\' to return to Menu\n\nEnter Process id : ");
+		scanf_s("%ld", &pid);
+		getchar();
+
+		if (pid == 0)
+			continue;
+		break;
+	}
+
+	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+	if (hProcess == INVALID_HANDLE_VALUE)
+		Error("Cannot Open Process");
+	else
+		printf("\n\nOpened Process successfully\n\n");
+	
+	if(hProcess != NULL)
+		CloseHandle(hProcess);
+
 	return 0;
 }
 
@@ -64,10 +73,50 @@ BOOL StartMenu(void)
 	return result;
 }
 
-DWORD* FindAndWriteMemory(HANDLE hProc, unsigned int find, unsigned int size)
+void PrintProcessList(void)
 {
-	SYSTEM_INFO si;
-	
+	HANDLE hProcessSnap = 0;
+	HANDLE hProcess = 0;
+	PROCESSENTRY32 pe32;
+
+	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE)
+		Error("Invalid ProcessSnap Handle");
+
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+
+	if (!Process32First(hProcessSnap, &pe32))
+	{
+		if(hProcessSnap != NULL)
+			CloseHandle(hProcessSnap);
+		Error("Process32First Error");
+		printf("%ld", GetLastError());
+	}
+
+	char Path[MAX_PATH];
+	do
+	{
+		memset(Path, 0, sizeof(char) * MAX_PATH);
+
+		HANDLE hProcess = 
+			OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+
+		if (hProcess == NULL)
+			continue;
+
+		int size = MAX_PATH * sizeof(char);
+		if (QueryFullProcessImageNameW(hProcess, 0, Path, &size))
+		{
+			_tprintf(_T("\n\nProcess Name : %s\nPath : %s\nID : %d"),
+				pe32.szExeFile, Path, pe32.th32ProcessID);
+		}
+		if(hProcess != NULL)
+			CloseHandle(hProcess);
+		
+	} while (Process32Next(hProcessSnap, &pe32));
+
+	if(hProcessSnap != NULL)
+		CloseHandle(hProcessSnap);
 }
 
 void Error(const char* message)
@@ -75,6 +124,7 @@ void Error(const char* message)
 	putchar('\n');
 	putchar('\n');
 	puts(message);
+	_getch();
 	exit(1);
 }
 
