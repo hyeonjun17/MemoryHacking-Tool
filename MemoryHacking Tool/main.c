@@ -314,7 +314,7 @@ void DllInjection(void)
 	else
 		printf("\n\nOpened Process successfully\n\n");
 
-	char DllPath[BUFSIZE];
+	BYTE DllPath[MAX_PATH];
 	printf("Enter Dll path to inject : ");
 	scanf_s("%s", &DllPath);
 	getchar();
