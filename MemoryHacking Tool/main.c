@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <Windows.h>
+#include <process.h>
 #include <TlHelp32.h>
 #include <tchar.h>
 #include <conio.h>
@@ -11,6 +12,7 @@ void PrintProcessList(void);
 BOOL CmpStr(BYTE* find_buffer, BYTE* source, unsigned int size);
 void ReadAndPrintMemory(void);
 void ReadAndWriteMemory(void);
+void DllInjection(void);
 void PressAnyKeyToProceed(void);
 void Error(const char* message);
 void gotoXY(int x, int y);
@@ -40,6 +42,9 @@ int main(void)
 		case 2:
 			ReadAndWriteMemory();
 			break;
+		case 3:
+			DllInjection();
+			break;
 		default:
 			break;
 		}
@@ -57,6 +62,7 @@ unsigned int StartMenu(void)
 	printf("\n\n\n");
 	printf("\t\t\t\t\t1. Read and Print Process' Memory\n");
 	printf("\t\t\t\t\t2. Find and Write Value\n");
+	printf("\t\t\t\t\t3. DLL Injection (CreateRemoteThread, kernel32.dll)\n");
 	printf("\t\t\t\t\t0. Exit\n\n");
 	printf("\t\t\t\t\tInput : ");
 	scanf_s("%d", &choice);
@@ -270,6 +276,7 @@ void ReadAndWriteMemory(void)
 					for (int i = 0; i < (DWORD)mbi.RegionSize; i++)
 						if (CmpStr(find_buffer, &read_buffer[i], find_buffer_size))
 						{
+							isFound = TRUE;
 							printf("\n\nFound Data\n");
 							if (WriteProcessMemory(hProcess, (DWORD)mbi.BaseAddress + i, write_buffer, write_buffer_size, NULL) != 0)
 								printf("\n\nWriting Memory..\n");
@@ -286,6 +293,65 @@ void ReadAndWriteMemory(void)
 
 	if (hProcess != NULL)
 		CloseHandle(hProcess);
+}
+
+void DllInjection(void)
+{
+	HANDLE hProcess;
+	HANDLE hThread;
+	HMODULE hMod;
+	HANDLE hModAddr;
+	LPVOID RemoteBuffer;
+
+	DWORD pid;
+	printf("\n\nEnter Process id : ");
+	scanf_s("%ld", &pid);
+	getchar();
+
+	hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+	if (hProcess == INVALID_HANDLE_VALUE)
+		Error("Cannot Open process");
+	else
+		printf("\n\nOpened Process successfully\n\n");
+
+	char DllPath[BUFSIZE];
+	printf("Enter Dll path to inject : ");
+	scanf_s("%s", &DllPath);
+	getchar();
+	DWORD dwDllpathSize = strlen(DllPath) + 1;
+
+	RemoteBuffer = VirtualAllocEx(hProcess, NULL, dwDllpathSize, MEM_COMMIT, PAGE_READWRITE);
+	if (RemoteBuffer == NULL)
+		Error("VirtualAllocEx Failed");
+
+	if (WriteProcessMemory(hProcess, RemoteBuffer, (LPVOID)DllPath, dwDllpathSize, NULL) == 0)
+	{
+		printf("\n\nFailed to write process memory");
+		return;
+	}
+	else
+		printf("\n\nWriting Memory..\n\n");
+
+	hMod = GetModuleHandle(_T("kernel32.dll"));
+	if (hMod == INVALID_HANDLE_VALUE)
+		Error("Cannot get handle of \"kernel32.dll\"");
+
+	hModAddr = GetProcAddress(hMod, "LoadLibraryA");
+	if (hModAddr == INVALID_HANDLE_VALUE)
+		Error("Cannot get address of \"LoadLibraryA\"");
+
+	hThread = CreateRemoteThread(hProcess, NULL, 0, hModAddr, RemoteBuffer, 0, NULL);
+	if (hThread == INVALID_HANDLE_VALUE)
+		Error("Cannot create remotethread");
+	else
+		printf("\n\nCreated RemoteThread\n\n");
+
+	WaitForSingleObject(hThread, INFINITE);
+
+	CloseHandle(hProcess);
+	CloseHandle(hThread);
+
+	return;
 }
 
 void PressAnyKeyToProceed(void)
