@@ -13,6 +13,7 @@ BOOL CmpStr(BYTE* find_buffer, BYTE* source, unsigned int size);
 void ReadAndPrintMemory(void);
 void ReadAndWriteMemory(void);
 void DllInjection(void);
+void CodeInjection(void);
 void PressAnyKeyToProceed(void);
 void Error(const char* message);
 void gotoXY(int x, int y);
@@ -45,6 +46,8 @@ int main(void)
 		case 3:
 			DllInjection();
 			break;
+		case 5:
+			CodeInjection();
 		default:
 			break;
 		}
@@ -63,6 +66,7 @@ unsigned int StartMenu(void)
 	printf("\t\t\t\t\t1. Read and Print Process' Memory\n");
 	printf("\t\t\t\t\t2. Find and Write Value\n");
 	printf("\t\t\t\t\t3. DLL Injection (CreateRemoteThread, kernel32.dll)\n");
+	printf("\t\t\t\t\t5. Code Injection (CreateRemoteThread, user32.dll, MessageBoxA)\n");
 	printf("\t\t\t\t\t0. Exit\n\n");
 	printf("\t\t\t\t\tInput : ");
 	scanf_s("%d", &choice);
@@ -352,6 +356,104 @@ void DllInjection(void)
 	CloseHandle(hThread);
 
 	return;
+}
+
+typedef HMODULE(WINAPI* myLoadLibraryA)(LPCSTR lpLibFileName);
+typedef FARPROC(WINAPI* myGetProcAddress)(HMODULE hModule, LPCSTR lpProcName);
+typedef INT(WINAPI* myMessageBoxA)(HWND hWind, LPCSTR lpText, LPCSTR lpCaption, UINT uType);
+
+typedef struct Inject_Data
+{
+	FARPROC loadlibraryA;
+	FARPROC getprocaddress;
+	BYTE dll[20];
+	BYTE func[20];
+	BYTE str[2][20];
+} Inject_Data;
+
+void WINAPI ThreadFuncForCodeInjection(LPVOID nParam)
+{
+	Inject_Data* Data = (Inject_Data*)nParam;
+	HMODULE hMod;
+
+	hMod = ((myLoadLibraryA)Data->loadlibraryA)(Data->dll);
+	myMessageBoxA pFunc = (myMessageBoxA)((myGetProcAddress)Data->getprocaddress)(hMod, Data->func);
+
+	pFunc(NULL, Data->str[0], Data->str[1], MB_OK);
+}
+
+void AfterFunc() {}
+
+void CodeInjection(void)
+{
+	HANDLE hProcess;
+	HANDLE hThread;
+	LPVOID ThreadVirtualAddr;
+	LPVOID DataVirtualAddr;
+	DWORD ThreadFuncSize;
+
+	DWORD pid;
+	printf("\n\nEnter Process id : ");
+	scanf_s("%ld", &pid);
+	getchar();
+
+	hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+	if (hProcess == INVALID_HANDLE_VALUE)
+		Error("Cannot Open process");
+	else
+		printf("\n\nOpened Process successfully\n\n");
+
+	ThreadFuncSize = (DWORD)AfterFunc - (DWORD)ThreadFuncForCodeInjection;
+
+	ThreadVirtualAddr = VirtualAllocEx(hProcess, NULL, ThreadFuncSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	if (ThreadVirtualAddr == NULL)
+		Error("VirtualAllocEx Failed");
+
+	if (WriteProcessMemory(hProcess, ThreadVirtualAddr, (LPVOID)ThreadFuncForCodeInjection,
+		ThreadFuncSize, NULL) != 0)
+		printf("\n\nWriting Memory..\n\n");
+	else
+	{
+		printf("\n\nCannot write memory\n\n");
+		return;
+	}
+
+	DataVirtualAddr = VirtualAllocEx(hProcess, NULL, sizeof(Inject_Data), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	if (DataVirtualAddr == NULL)
+		Error("VirtualAllocEx Failed");
+
+	Inject_Data data;
+	HMODULE hMod = GetModuleHandleA("kernel32.dll");
+	if (hMod == INVALID_HANDLE_VALUE)
+		Error("Cannot getmodulehandle");
+	data.loadlibraryA = GetProcAddress(hMod, "LoadLibraryA");
+	data.getprocaddress = GetProcAddress(hMod, "GetProcAddress");
+	strcpy_s(data.dll, sizeof("user32.dll"), "user32.dll");
+	strcpy_s(data.func, sizeof("MessageBoxA"), "MessageBoxA");
+	strcpy_s(data.str[0], sizeof("you're hacked!"), "you're hacked!");
+	strcpy_s(data.str[1], sizeof("Alarm"), "Alarm");
+
+	if (WriteProcessMemory(hProcess, DataVirtualAddr, (LPVOID)&data,
+		sizeof(Inject_Data), NULL) != 0)
+		printf("\n\nWriting Memory..\n\n");
+	else
+	{
+		printf("\n\nCannot write memory\n\n");
+		return;
+	}
+
+	hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)ThreadVirtualAddr,
+		DataVirtualAddr, 0, NULL);
+	if (hThread == INVALID_HANDLE_VALUE)
+		Error("Cannot create remotethread");
+	else
+		printf("\n\nCreated RemoteThread\n\n");
+
+	WaitForSingleObject(hThread, INFINITE);
+	CloseHandle(hProcess);
+	CloseHandle(hThread);
+	//if(hMod != INVALID_HANDLE_VALUE)
+	//	CloseHandle(hMod);
 }
 
 void PressAnyKeyToProceed(void)
