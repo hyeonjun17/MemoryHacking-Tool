@@ -61,14 +61,14 @@ unsigned int StartMenu(void)
 {
 	unsigned int choice = 0;
 	printf("\n\n");
-	printf("\t\t\t\t\tMemory Hacking Tool");
+	printf("\t\t\t\tMemory Hacking Tool");
 	printf("\n\n\n");
-	printf("\t\t\t\t\t1. Read and Print Process' Memory\n");
-	printf("\t\t\t\t\t2. Find and Write Value\n");
-	printf("\t\t\t\t\t3. DLL Injection (CreateRemoteThread, kernel32.dll)\n");
-	printf("\t\t\t\t\t5. Code Injection (CreateRemoteThread, user32.dll, MessageBoxA)\n");
-	printf("\t\t\t\t\t0. Exit\n\n");
-	printf("\t\t\t\t\tInput : ");
+	printf("\t\t\t\t1. Read and Print Process' Memory\n");
+	printf("\t\t\t\t2. Find and Write Value\n");
+	printf("\t\t\t\t3. DLL Injection (CreateRemoteThread, kernel32.dll)\n");
+	printf("\t\t\t\t5. Code Injection (CreateRemoteThread, user32.dll, MessageBoxA, msvcrt.dll, printf)\n");
+	printf("\t\t\t\t0. Exit\n\n");
+	printf("\t\t\t\tInput : ");
 	scanf_s("%d", &choice);
 	getchar();
 	return choice;
@@ -78,9 +78,9 @@ BOOL SearchProcess(void)
 {
 	BOOL result = FALSE;
 	printf("\t\t\n");
-	printf("\n\n\n\t\t\t\t\tPress \'S\' to search process\n");
+	printf("\n\n\n\t\t\t\tPress \'S\' to search process\n");
 	printf("\t\t\n");
-	printf("\n\t\t\t\t\tPress \'E\' to go back to menu\n\n");
+	printf("\n\t\t\t\tPress \'E\' to go back to menu\n\n");
 	while (1)
 	{
 		if (_kbhit())
@@ -361,25 +361,34 @@ void DllInjection(void)
 typedef HMODULE(WINAPI* myLoadLibraryA)(LPCSTR lpLibFileName);
 typedef FARPROC(WINAPI* myGetProcAddress)(HMODULE hModule, LPCSTR lpProcName);
 typedef INT(WINAPI* myMessageBoxA)(HWND hWind, LPCSTR lpText, LPCSTR lpCaption, UINT uType);
+typedef INT(_cdecl myPrintf)(const char* const _Format, ...);
+typedef INT(_cdecl myPuts)(const char* _Buffer);
 
 typedef struct Inject_Data
 {
 	FARPROC loadlibraryA;
 	FARPROC getprocaddress;
-	BYTE dll[20];
-	BYTE func[20];
+	BYTE user32dll[20];
+	BYTE msvcrtdll[20];
+	BYTE messagebox_func[20];
+	BYTE printf_func[20];
 	BYTE str[2][20];
 } Inject_Data;
 
 void WINAPI ThreadFuncForCodeInjection(LPVOID nParam)
 {
 	Inject_Data* Data = (Inject_Data*)nParam;
-	HMODULE hMod;
+	HMODULE hMod1;
+	HMODULE hMod2;
 
-	hMod = ((myLoadLibraryA)Data->loadlibraryA)(Data->dll);
-	myMessageBoxA pFunc = (myMessageBoxA)((myGetProcAddress)Data->getprocaddress)(hMod, Data->func);
+	hMod1 = ((myLoadLibraryA)Data->loadlibraryA)(Data->user32dll);
+	myMessageBoxA pFunc1 = (myMessageBoxA)((myGetProcAddress)Data->getprocaddress)(hMod1, Data->messagebox_func);
+	hMod2 = ((myLoadLibraryA)Data->loadlibraryA)(Data->msvcrtdll);
+	myPrintf* pFunc2 = (myPrintf*)((myGetProcAddress)Data->getprocaddress)(hMod2, Data->printf_func);
 
-	pFunc(NULL, Data->str[0], Data->str[1], MB_OK);
+	pFunc1(NULL, Data->str[0], Data->str[1], MB_OK);
+	for(int i = 0; i < 100000; i++)
+		pFunc2(Data->str[0]);
 }
 
 void AfterFunc() {}
@@ -390,6 +399,7 @@ void CodeInjection(void)
 	HANDLE hThread;
 	LPVOID ThreadVirtualAddr;
 	LPVOID DataVirtualAddr;
+	LPVOID PrintfVirtualAddr;
 	DWORD ThreadFuncSize;
 
 	DWORD pid;
@@ -428,10 +438,13 @@ void CodeInjection(void)
 		Error("Cannot getmodulehandle");
 	data.loadlibraryA = GetProcAddress(hMod, "LoadLibraryA");
 	data.getprocaddress = GetProcAddress(hMod, "GetProcAddress");
-	strcpy_s(data.dll, sizeof("user32.dll"), "user32.dll");
-	strcpy_s(data.func, sizeof("MessageBoxA"), "MessageBoxA");
+	strcpy_s(data.user32dll, sizeof("user32.dll"), "user32.dll");
+	strcpy_s(data.msvcrtdll, sizeof("msvcrt.dll"), "msvcrt.dll");
+	strcpy_s(data.messagebox_func, sizeof("MessageBoxA"), "MessageBoxA");
+	strcpy_s(data.printf_func, sizeof("printf"), "printf");
 	strcpy_s(data.str[0], sizeof("you're hacked!"), "you're hacked!");
 	strcpy_s(data.str[1], sizeof("Alarm"), "Alarm");
+
 
 	if (WriteProcessMemory(hProcess, DataVirtualAddr, (LPVOID)&data,
 		sizeof(Inject_Data), NULL) != 0)
