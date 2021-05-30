@@ -354,15 +354,13 @@ void DllInjection(void)
 
 	CloseHandle(hProcess);
 	CloseHandle(hThread);
-
-	return;
+	FreeLibrary(hMod);
 }
 
 typedef HMODULE(WINAPI* myLoadLibraryA)(LPCSTR lpLibFileName);
 typedef FARPROC(WINAPI* myGetProcAddress)(HMODULE hModule, LPCSTR lpProcName);
 typedef INT(WINAPI* myMessageBoxA)(HWND hWind, LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 typedef INT(_cdecl myPrintf)(const char* const _Format, ...);
-typedef INT(_cdecl myPuts)(const char* _Buffer);
 
 typedef struct Inject_Data
 {
@@ -389,6 +387,9 @@ void WINAPI ThreadFuncForCodeInjection(LPVOID nParam)
 	pFunc1(NULL, Data->str[0], Data->str[1], MB_OK);
 	for(int i = 0; i < 100000; i++)
 		pFunc2(Data->str[0]);
+
+	FreeLibrary(hMod1);
+	FreeLibrary(hMod2);
 }
 
 void AfterFunc() {}
@@ -465,8 +466,7 @@ void CodeInjection(void)
 	WaitForSingleObject(hThread, INFINITE);
 	CloseHandle(hProcess);
 	CloseHandle(hThread);
-	//if(hMod != INVALID_HANDLE_VALUE)
-	//	CloseHandle(hMod);
+	FreeLibrary(hMod);
 }
 
 void PressAnyKeyToProceed(void)
