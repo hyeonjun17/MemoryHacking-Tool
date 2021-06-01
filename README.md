@@ -1,7 +1,7 @@
 # MemoryHacking-Tool [UNDER DEVELOPEMENT]
 read and write another process' memory
 
-## 1. Read and Write process' memory
+## 1. Read and Print process' memory
 
 ## 2. Find and Write Value
 
