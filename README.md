@@ -10,3 +10,5 @@ read and write another process' memory
 ## 4. Reflective DLL Injection (planning to add..)
 
 ## 5. Code Injection (CreateRemoteThread, user32.dll, MessageBoxA, msvcrt.dll, printf)
+
+## +planning to add dll, reflective dll..
