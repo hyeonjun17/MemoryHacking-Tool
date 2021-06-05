@@ -46,7 +46,7 @@ int main(void)
 		case 3:
 			DllInjection();
 			break;
-		case 5:
+		case 4:
 			CodeInjection();
 		default:
 			break;
@@ -64,9 +64,9 @@ unsigned int StartMenu(void)
 	printf("\t\t\t\tMemory Hacking Tool");
 	printf("\n\n\n");
 	printf("\t\t\t\t1. Read and Print Process' Memory\n");
-	printf("\t\t\t\t2. Find and Write Value\n");
+	printf("\t\t\t\t2. Find and Write String\n");
 	printf("\t\t\t\t3. DLL Injection (CreateRemoteThread, kernel32.dll)\n");
-	printf("\t\t\t\t5. Code Injection (CreateRemoteThread, user32.dll, MessageBoxA, msvcrt.dll, printf)\n");
+	printf("\t\t\t\t4. Code Injection (CreateRemoteThread, user32.dll, MessageBoxA, msvcrt.dll, printf)\n");
 	printf("\t\t\t\t0. Exit\n\n");
 	printf("\t\t\t\tInput : ");
 	scanf_s("%d", &choice);
@@ -305,7 +305,7 @@ void DllInjection(void)
 	HANDLE hThread;
 	HMODULE hMod;
 	HANDLE hModAddr;
-	LPVOID RemoteBuffer;
+	LPVOID lpRemoteBuffer;
 
 	DWORD pid;
 	printf("\n\nEnter Process id : ");
@@ -324,11 +324,11 @@ void DllInjection(void)
 	getchar();
 	DWORD dwDllpathSize = strlen(DllPath) + 1;
 
-	RemoteBuffer = VirtualAllocEx(hProcess, NULL, dwDllpathSize, MEM_COMMIT, PAGE_READWRITE);
-	if (RemoteBuffer == NULL)
+	lpRemoteBuffer = VirtualAllocEx(hProcess, NULL, dwDllpathSize, MEM_COMMIT, PAGE_READWRITE);
+	if (lpRemoteBuffer == NULL)
 		Error("VirtualAllocEx Failed");
 
-	if (WriteProcessMemory(hProcess, RemoteBuffer, (LPVOID)DllPath, dwDllpathSize, NULL) == 0)
+	if (WriteProcessMemory(hProcess, lpRemoteBuffer, (LPVOID)DllPath, dwDllpathSize, NULL) == 0)
 	{
 		printf("\n\nFailed to write process memory");
 		return;
@@ -344,7 +344,7 @@ void DllInjection(void)
 	if (hModAddr == INVALID_HANDLE_VALUE)
 		Error("Cannot get address of \"LoadLibraryA\"");
 
-	hThread = CreateRemoteThread(hProcess, NULL, 0, hModAddr, RemoteBuffer, 0, NULL);
+	hThread = CreateRemoteThread(hProcess, NULL, 0, hModAddr, lpRemoteBuffer, 0, NULL);
 	if (hThread == INVALID_HANDLE_VALUE)
 		Error("Cannot create remotethread");
 	else
@@ -387,9 +387,6 @@ void WINAPI ThreadFuncForCodeInjection(LPVOID nParam)
 	pFunc1(NULL, Data->str[0], Data->str[1], MB_OK);
 	for(int i = 0; i < 100000; i++)
 		pFunc2(Data->str[0]);
-
-	FreeLibrary(hMod1);
-	FreeLibrary(hMod2);
 }
 
 void AfterFunc() {}

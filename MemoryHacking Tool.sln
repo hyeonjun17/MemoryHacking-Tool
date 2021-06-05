@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.31205.134
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MemoryHacking Tool", "MemoryHacking Tool\MemoryHacking Tool.vcxproj", "{8AC091E6-2AE8-434F-8EF5-1FC6CD1F2F0F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "myhack", "myhack\myhack.vcxproj", "{ECA14268-70AE-40C3-B92B-8B11A9A25414}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Target_HelloWorld", "Target_HelloWorld\Target_HelloWorld.vcxproj", "{211F28AE-04A2-4DAC-86B3-686846A0192A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +25,22 @@ Global
 		{8AC091E6-2AE8-434F-8EF5-1FC6CD1F2F0F}.Release|x64.Build.0 = Release|x64
 		{8AC091E6-2AE8-434F-8EF5-1FC6CD1F2F0F}.Release|x86.ActiveCfg = Release|Win32
 		{8AC091E6-2AE8-434F-8EF5-1FC6CD1F2F0F}.Release|x86.Build.0 = Release|Win32
+		{ECA14268-70AE-40C3-B92B-8B11A9A25414}.Debug|x64.ActiveCfg = Debug|x64
+		{ECA14268-70AE-40C3-B92B-8B11A9A25414}.Debug|x64.Build.0 = Debug|x64
+		{ECA14268-70AE-40C3-B92B-8B11A9A25414}.Debug|x86.ActiveCfg = Debug|Win32
+		{ECA14268-70AE-40C3-B92B-8B11A9A25414}.Debug|x86.Build.0 = Debug|Win32
+		{ECA14268-70AE-40C3-B92B-8B11A9A25414}.Release|x64.ActiveCfg = Release|x64
+		{ECA14268-70AE-40C3-B92B-8B11A9A25414}.Release|x64.Build.0 = Release|x64
+		{ECA14268-70AE-40C3-B92B-8B11A9A25414}.Release|x86.ActiveCfg = Release|Win32
+		{ECA14268-70AE-40C3-B92B-8B11A9A25414}.Release|x86.Build.0 = Release|Win32
+		{211F28AE-04A2-4DAC-86B3-686846A0192A}.Debug|x64.ActiveCfg = Debug|x64
+		{211F28AE-04A2-4DAC-86B3-686846A0192A}.Debug|x64.Build.0 = Debug|x64
+		{211F28AE-04A2-4DAC-86B3-686846A0192A}.Debug|x86.ActiveCfg = Debug|Win32
+		{211F28AE-04A2-4DAC-86B3-686846A0192A}.Debug|x86.Build.0 = Debug|Win32
+		{211F28AE-04A2-4DAC-86B3-686846A0192A}.Release|x64.ActiveCfg = Release|x64
+		{211F28AE-04A2-4DAC-86B3-686846A0192A}.Release|x64.Build.0 = Release|x64
+		{211F28AE-04A2-4DAC-86B3-686846A0192A}.Release|x86.ActiveCfg = Release|Win32
+		{211F28AE-04A2-4DAC-86B3-686846A0192A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
