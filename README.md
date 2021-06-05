@@ -1,4 +1,4 @@
-# MemoryHacking-Tool [UNDER DEVELOPEMENT]
+# MemoryHacking-Tool
 read and write another process' memory
 
 ## 1. Read and Print process' memory
