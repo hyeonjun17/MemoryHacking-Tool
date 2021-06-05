@@ -7,8 +7,6 @@ read and write another process' memory
 
 ## 3. DLL Injection (CreateRemoteThread, kernel32.dll)
 
-## 4. Reflective DLL Injection (planning to add..)
-
-## 5. Code Injection (CreateRemoteThread, user32.dll, MessageBoxA, msvcrt.dll, printf)
+## 4. Code Injection (CreateRemoteThread, user32.dll, MessageBoxA, msvcrt.dll, printf)
 
 ## +myhack.dll, target_helloworld process
