@@ -244,6 +244,7 @@ void ReadAndWriteMemory(void)
 	scanf_s("%s", write_buffer, sizeof(write_buffer));
 	getchar();
 	unsigned int write_buffer_size = strlen(write_buffer);
+	write_buffer[write_buffer_size] = '\0';
 
 
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
@@ -280,7 +281,7 @@ void ReadAndWriteMemory(void)
 						{
 							isFound = TRUE;
 							printf("\n\nFound Data\n");
-							if (WriteProcessMemory(hProcess, (DWORD)mbi.BaseAddress + i, write_buffer, write_buffer_size, NULL) != 0)
+							if (WriteProcessMemory(hProcess, (DWORD)mbi.BaseAddress + i, write_buffer, write_buffer_size + 1, NULL) != 0)
 								printf("\n\nWriting Memory..\n");
 						}
 				}
