@@ -181,8 +181,6 @@ void ReadAndPrintMemory(void)
 
 	nMem = (DWORD)si.lpMinimumApplicationAddress;
 
-	BOOL isFound = FALSE;
-
 	do
 	{
 		if (VirtualQueryEx(hProcess, nMem, &mbi, sizeof(mbi)) == sizeof(mbi))
@@ -220,7 +218,7 @@ void ReadAndPrintMemory(void)
 			}
 			nMem = (DWORD)mbi.BaseAddress + (DWORD)mbi.RegionSize;
 		}
-	} while (nMem < (DWORD)si.lpMaximumApplicationAddress && isFound == FALSE);
+	} while (nMem < (DWORD)si.lpMaximumApplicationAddress);
 
 	if (hProcess != NULL)
 		CloseHandle(hProcess);
